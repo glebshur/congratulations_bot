@@ -5,5 +5,5 @@ package com.gleb_dev.congratulations_bot.constant.callbackButton;
  */
 public interface CallbackButton {
     String getCommandName();
-    String getText();
+    String getTextCode();
 }

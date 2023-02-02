@@ -6,14 +6,14 @@ import lombok.Getter;
  */
 @Getter
 public enum ButtonCommand {
-    GET_JOKE("Дай анекдот"),
-    GET_VIDEO("Покажи видео"),
-    GET_WISH("Хочу пожеланий"),
-    CHOOSE_HOLIDAY("Выбрать праздник");
+    GET_JOKE("buttonCommand.getJoke.command"),
+    GET_VIDEO("buttonCommand.getVideo.command"),
+    GET_WISH("buttonCommand.getWish.command"),
+    CHOOSE_HOLIDAY("buttonCommand.chooseHoliday.command");
 
-    private String command;
+    private String commandCode;
 
-    ButtonCommand(String command) {
-        this.command = command;
+    ButtonCommand(String commandCode) {
+        this.commandCode = commandCode;
     }
 }

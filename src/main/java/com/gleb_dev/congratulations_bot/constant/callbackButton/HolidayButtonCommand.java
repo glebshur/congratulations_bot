@@ -7,25 +7,25 @@ import lombok.Getter;
  */
 @Getter
 public enum  HolidayButtonCommand implements CallbackButton {
-    BIRTHDAY ("BIRTHDAY", "День Рождения",
-            "Поздравляю тебя с Днем Рождения!!! Всего самого наилучшего и долгих лет!"),
-    WEDDING("WEDDING","Свадьба",
-            "Поздравляю со свадьбой! Счастья молодоженам!!!"),
-    SOME_ANNIVERSARY("SOME_ANNIVERSARY", "Какой либо юбилей",
-            "Поздравляю с каким-то юбилеем!!! :)"),
-    PAYDAY("PAYDAY", "День получки",
-            "Поздравляю с лучшим днем в году!!!"),
-    HOUSEWARMING("HOUSEWARMING", "Новоселье",
-            "Поздравляю с новосельем!!! Надеюсь, ты доволен новым жильем.");
+    BIRTHDAY ("BIRTHDAY", "holiday.birthday.text",
+            "holiday.birthday.congratulation"),
+    WEDDING("WEDDING","holiday.wedding.text",
+            "holiday.wedding.congratulation"),
+    SOME_ANNIVERSARY("SOME_ANNIVERSARY", "holiday.someAnniversary.text",
+            "holiday.someAnniversary.congratulation"),
+    PAYDAY("PAYDAY", "holiday.payday.text",
+            "holiday.payday.congratulation"),
+    HOUSEWARMING("HOUSEWARMING", "holiday.housewarming.text",
+            "holiday.housewarming.congratulation");
 
     private String commandName;
-    private String text;
-    private String congratulation;
+    private String textCode;
+    private String congratulationCode;
 
-    HolidayButtonCommand(String commandName, String text, String congratulation) {
+    HolidayButtonCommand(String commandName, String textCode, String congratulationCode) {
         this.commandName = commandName;
-        this.text = text;
-        this.congratulation = congratulation;
+        this.textCode = textCode;
+        this.congratulationCode = congratulationCode;
     }
 
     public static HolidayButtonCommand valueOfCommandName(String commandName){
@@ -43,7 +43,7 @@ public enum  HolidayButtonCommand implements CallbackButton {
     }
 
     @Override
-    public String getText() {
-        return text;
+    public String getTextCode() {
+        return textCode;
     }
 }

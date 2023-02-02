@@ -77,7 +77,7 @@ public class CongratulationsBot extends TelegramLongPollingBot {
 
     private void configureCommandMenu() {
         List<BotCommand> botCommandList = Arrays.stream(MenuCommand.values())
-                .map(menuCommand -> new BotCommand(menuCommand.getCommand(), menuCommand.getShortDescription()))
+                .map(menuCommand -> new BotCommand(menuCommand.getCommand(), menuCommand.getShortDescriptionCode()))
                 .collect(Collectors.toList());
 
         try {

@@ -4,15 +4,18 @@ import com.gleb_dev.congratulations_bot.constant.ButtonCommand;
 import com.gleb_dev.congratulations_bot.constant.MenuCommand;
 import com.gleb_dev.congratulations_bot.constant.callbackButton.CallbackButton;
 import com.gleb_dev.congratulations_bot.constant.callbackButton.HolidayButtonCommand;
+import com.gleb_dev.congratulations_bot.constant.callbackButton.SettingsButtonCommand;
 import com.gleb_dev.congratulations_bot.constant.callbackButton.VideoButtonCommand;
 import com.gleb_dev.congratulations_bot.entity.Joke;
 import com.gleb_dev.congratulations_bot.entity.Wish;
 import com.gleb_dev.congratulations_bot.exception.JokeNotFoundException;
 import com.gleb_dev.congratulations_bot.exception.WishNotFoundException;
 import com.gleb_dev.congratulations_bot.service.JokeService;
+import com.gleb_dev.congratulations_bot.service.KeyboardProvider;
 import com.gleb_dev.congratulations_bot.service.WishService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -22,9 +25,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * Class that process messages
@@ -36,22 +37,29 @@ public class MessageHandler {
 
     private JokeService jokeService;
     private WishService wishService;
+    private MessageSource messageSource;
+    private KeyboardProvider keyboardProvider;
 
     @Autowired
-    public MessageHandler(JokeService jokeService, WishService wishService) {
+    public MessageHandler(JokeService jokeService, WishService wishService, MessageSource messageSource, KeyboardProvider keyboardProvider) {
         this.jokeService = jokeService;
         this.wishService = wishService;
+        this.messageSource = messageSource;
+        this.keyboardProvider = keyboardProvider;
     }
 
     /**
      * Method processes incoming messages
+     *
      * @param message message that needs to be processed
      * @return response to message received
      */
     public SendMessage processMessage(Message message) {
-        String answer = "Прости, я тебя не понял";
+        String answer = null;
         ReplyKeyboard replyKeyboard = null;
 
+        String languageTag = "en";
+        Locale locale = Locale.forLanguageTag(languageTag);
         if (message.hasText()) {
 
             log.info("User \"{}\" sent message: {}",
@@ -60,24 +68,32 @@ public class MessageHandler {
 
             String inputText = message.getText();
             if (inputText.equals(MenuCommand.START.getCommand())) {
-                answer = "Привет, " + message.getChat().getFirstName() + "!!!";
-                replyKeyboard = getDefaultKeyboard();
-//            } else if (inputText.equals(MenuCommand.SETTINGS.getCommand())) {
-//                answer = "Вот твои настроки";
+                answer = processStartCommand(message.getChat().getFirstName(), locale);
+                replyKeyboard = keyboardProvider.getDefaultKeyboard(locale);
+            } else if (inputText.equals(MenuCommand.SETTINGS.getCommand())) {
+                answer = messageSource.getMessage("menuCommand.settings.answer",
+                        null, locale);
+                replyKeyboard = keyboardProvider.getInlineKeyboard(SettingsButtonCommand.values(), locale);
             } else if (inputText.equals(MenuCommand.HELP.getCommand())) {
-                answer = getHelp();
-            } else if (inputText.equals(ButtonCommand.GET_JOKE.getCommand())) {
-                answer = processGetJokeCommand();
-            } else if (inputText.equals(ButtonCommand.GET_VIDEO.getCommand())) {
-                answer = "Выбери категорию";
-                replyKeyboard = getInlineKeyboard(VideoButtonCommand.values());
-            } else if (inputText.equals(ButtonCommand.GET_WISH.getCommand())) {
+                answer = processHelpButton(locale);
+            } else if (inputText.equals(ButtonCommand.GET_VIDEO.getCommandCode())) {
+                answer = messageSource.getMessage("buttonCommand.getVideo.answer",
+                        null, locale);
+                replyKeyboard = keyboardProvider.getInlineKeyboard(VideoButtonCommand.values(), locale);
+            } else if (inputText.equals(ButtonCommand.CHOOSE_HOLIDAY.getCommandCode())) {
+                answer = messageSource.getMessage("buttonCommand.chooseHoliday.answer",
+                        null, locale);
+                replyKeyboard = keyboardProvider.getInlineKeyboard(HolidayButtonCommand.values(), locale);
+            } else if (inputText.equals(ButtonCommand.GET_WISH.getCommandCode())) {
                 answer = processGetWishCommand();
-            } else if (inputText.equals(ButtonCommand.CHOOSE_HOLIDAY.getCommand())) {
-                answer = "Выбери праздник!";
-                replyKeyboard = getInlineKeyboard(HolidayButtonCommand.values());
+            } else if (inputText.equals(ButtonCommand.GET_JOKE.getCommandCode())) {
+                answer = processGetJokeCommand();
             }
 
+        }
+
+        if (answer == null) {
+            answer = processCommandNotFound(locale);
         }
 
         SendMessage sendMessage = new SendMessage();
@@ -86,6 +102,20 @@ public class MessageHandler {
         sendMessage.setReplyMarkup(replyKeyboard);
 
         return sendMessage;
+    }
+
+    private String processStartCommand(String name, Locale locale) {
+        String answer = messageSource.getMessage("menuCommand.start.answer",
+                Collections.singleton(name).toArray(),
+                locale);
+        return answer;
+    }
+
+    private String processCommandNotFound(Locale locale) {
+        String answer = messageSource.getMessage("commandNotFound",
+                null,
+                locale);
+        return answer;
     }
 
     private String processGetWishCommand() {
@@ -114,56 +144,21 @@ public class MessageHandler {
         return answer;
     }
 
-
-    private String getHelp() {
+    private String processHelpButton(Locale locale) {
         StringBuilder help = new StringBuilder();
-        help.append("Это CongratulationsBot, который может поздравлять с праздниками, отправлять случайный анекдот, " +
-                "видео или пожелания :)\n\n" +
-                "Создания самого бота приурочено ко дню рождения моем мамы. Мам, спасибо тебе за все, что ты делаешь!\n\n" +
-                "Вот полный список команд поддерживаемых ботом:\n\n");
         Arrays.stream(MenuCommand.values())
-                .forEach(menuCommand -> help.append(menuCommand.getCommand()).append(" - ")
-                        .append(menuCommand.getFullDescription()).append("\n"));
-        help.append("\nОстальное взаимодействие поддерживается с помощью кнопок");
+                .forEach(menuCommand -> help
+                        .append(menuCommand.getCommand())
+                        .append(" - ")
+                        .append(messageSource.getMessage(menuCommand.getFullDescriptionCode(),
+                                null, locale))
+                        .append("\n"));
 
-        return help.toString();
+        String answer = messageSource.getMessage("menuCommand.help.answer",
+                Collections.singleton(help.toString()).toArray(),
+                locale);
+
+        return answer;
     }
 
-    private ReplyKeyboardMarkup getDefaultKeyboard() {
-        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
-        List<KeyboardRow> keyboardRows = new ArrayList<>();
-
-        KeyboardRow row = new KeyboardRow();
-        row.add(ButtonCommand.CHOOSE_HOLIDAY.getCommand());
-        row.add(ButtonCommand.GET_WISH.getCommand());
-        keyboardRows.add(row);
-
-        row = new KeyboardRow();
-        row.add(ButtonCommand.GET_JOKE.getCommand());
-        row.add(ButtonCommand.GET_VIDEO.getCommand());
-        keyboardRows.add(row);
-
-        keyboardMarkup.setKeyboard(keyboardRows);
-        return keyboardMarkup;
-    }
-
-    private InlineKeyboardMarkup getInlineKeyboard(CallbackButton[] buttons) {
-        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
-        Arrays.stream(buttons)
-                .forEach(button -> keyboard.add(getSingleButtonInRow(button.getText(), button.getCommandName())));
-        inlineKeyboardMarkup.setKeyboard(keyboard);
-        return inlineKeyboardMarkup;
-    }
-
-
-    private List<InlineKeyboardButton> getSingleButtonInRow(String buttonName, String buttonCallBackData) {
-        InlineKeyboardButton button = new InlineKeyboardButton();
-        button.setText(buttonName);
-        button.setCallbackData(buttonCallBackData);
-
-        List<InlineKeyboardButton> keyboardButtonsRow = new ArrayList<>();
-        keyboardButtonsRow.add(button);
-        return keyboardButtonsRow;
-    }
 }

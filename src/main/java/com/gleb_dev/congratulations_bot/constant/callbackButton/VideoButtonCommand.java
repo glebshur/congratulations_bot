@@ -7,22 +7,23 @@ import lombok.Getter;
  */
 @Getter
 public enum VideoButtonCommand implements CallbackButton {
-    VIDEO_COOKING ( "VIDEO_COOKING","кулинария рецепты", "Кулинария"),
-    VIDEO_CARS ("VIDEO_CARS","новые машины| авто обзоры", "Машины"),
-    VIDEO_SCIENCE_AND_SPACE ("VIDEO_SCIENCE_AND_SPACE","наука космос", "Космос"),
-    VIDEO_HISTORY("VIDEO_HISTORY","интересная история человечества", "История"),
-    VIDEO_FILMS("VIDEO_FILMS","фильмы сериалы новинки", "Новые фильмы и сериалы"),
-    VIDEO_SPORT("VIDEO_SPORT","спорт", "Спорт");
+    VIDEO_COOKING ( "VIDEO_COOKING","video.cooking.searchQuery", "video.cooking.text"),
+    VIDEO_CARS ("VIDEO_CARS","video.cars.searchQuery", "video.cars.text"),
+    VIDEO_SCIENCE_AND_SPACE ("VIDEO_SCIENCE_AND_SPACE","video.scienceAndSpace.searchQuery",
+            "video.scienceAndSpace.text"),
+    VIDEO_HISTORY("VIDEO_HISTORY","video.history.searchQuery", "video.history.text"),
+    VIDEO_FILMS("VIDEO_FILMS","video.films.searchQuery", "video.films.text"),
+    VIDEO_SPORT("VIDEO_SPORT","video.sport.searchQuery", "video.sport.text");
 
 
     private String commandName;
-    private String searchQuery;
-    private String text;
+    private String searchQueryCode;
+    private String textCode;
 
-    VideoButtonCommand(String commandName, String searchQuery, String text) {
+    VideoButtonCommand(String commandName, String searchQueryCode, String textCode) {
         this.commandName = commandName;
-        this.searchQuery = searchQuery;
-        this.text = text;
+        this.searchQueryCode = searchQueryCode;
+        this.textCode = textCode;
     }
 
     public static VideoButtonCommand valueOfCommandName(String commandName){
@@ -40,7 +41,7 @@ public enum VideoButtonCommand implements CallbackButton {
     }
 
     @Override
-    public String getText() {
-        return text;
+    public String getTextCode() {
+        return textCode;
     }
 }

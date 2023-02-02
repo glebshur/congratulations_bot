@@ -8,20 +8,20 @@ import lombok.Getter;
 
 @Getter
 public enum MenuCommand {
-    START("/start", "Запуск бота", "после использования команды " +
-            "ты можешь начать взаимодействовать с ботом"),
-//    SETTINGS("/settings", "Управление настройками", "с помощью этой команды " +
-//            "ты можешь изменять свои настройки (язык и т.д.)"),
-    HELP("/help", "Информация о боте", "показывает этот список " +
-            "всех команд и описания бота");
+    START("/start", "menuCommand.start.shortDescription",
+            "menuCommand.start.fullDescription"),
+    SETTINGS("/settings", "menuCommand.settings.shortDescription",
+            "menuCommand.settings.fullDescription"),
+    HELP("/help", "menuCommand.help.shortDescription",
+        "menuCommand.help.fullDescription");
 
     private String command;
-    private String shortDescription;
-    private String fullDescription;
+    private String shortDescriptionCode;
+    private String fullDescriptionCode;
 
-    MenuCommand(String command, String shortDescription, String fullDescription) {
+    MenuCommand(String command, String shortDescriptionCode, String fullDescriptionCode) {
         this.command = command;
-        this.shortDescription = shortDescription;
-        this.fullDescription = fullDescription;
+        this.shortDescriptionCode = shortDescriptionCode;
+        this.fullDescriptionCode = fullDescriptionCode;
     }
 }
