@@ -1,8 +1,10 @@
 package com.gleb_dev.congratulations_bot.service.handler;
 
+import com.gleb_dev.congratulations_bot.constant.LanguageConstants;
 import com.gleb_dev.congratulations_bot.constant.callbackButton.HolidayButtonCommand;
 import com.gleb_dev.congratulations_bot.constant.callbackButton.SettingsButtonCommand;
 import com.gleb_dev.congratulations_bot.constant.callbackButton.VideoButtonCommand;
+import com.gleb_dev.congratulations_bot.entity.Language;
 import com.gleb_dev.congratulations_bot.service.KeyboardProvider;
 import com.gleb_dev.congratulations_bot.service.YouTubeSearchProvider;
 import lombok.extern.slf4j.Slf4j;
@@ -43,8 +45,10 @@ public class CallbackQueryHandler {
      */
     public BotApiMethod<Serializable> processCallbackQuery(CallbackQuery callbackQuery) {
         String data = callbackQuery.getData();
-        String languageTag = "ru";
-        Locale locale = Locale.forLanguageTag(languageTag);
+
+        Language language = LanguageConstants.DEFAULT_LANGUAGE;
+
+        Locale locale = Locale.forLanguageTag(language.getLanguageTag());
 
         log.info("User \"{}\" sent callback query with data: {}",
                 callbackQuery.getMessage().getChat().getFirstName(),
@@ -70,7 +74,7 @@ public class CallbackQueryHandler {
             return handleSettingsCommand(settingsCommand, chatId, messageId, locale);
         }
 
-        return createEditMessage(messageSource.getMessage("commandNotFound", null, locale),
+        return createEditMessage(messageSource.getMessage(LanguageConstants.COMMAND_NOT_FOUND_CODE, null, locale),
                 chatId, messageId);
     }
 
@@ -88,8 +92,8 @@ public class CallbackQueryHandler {
                                                              long chatId,
                                                              int messageId,
                                                              Locale locale){
-        String answer = messageSource.getMessage("settings.answer",
-                Collections.singleton(locale.getLanguage()).toArray(),
+        String answer = messageSource.getMessage(LanguageConstants.SETTINGS_ANSWER,
+                Collections.singleton(messageSource.getMessage(command.getTextCode(), null, locale)).toArray(),
                 locale);
         return createEditMessage(answer, chatId, messageId);
     }
