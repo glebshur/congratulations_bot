@@ -1,7 +1,14 @@
 
+DROP TABLE IF EXISTS "user";
 DROP TABLE IF EXISTS joke;
 DROP TABLE IF EXISTS wish;
 
+CREATE TABLE "user"
+(
+    id bigint PRIMARY KEY ,
+    first_name varchar (30),
+    language varchar (10)
+);
 
 CREATE TABLE joke
 (

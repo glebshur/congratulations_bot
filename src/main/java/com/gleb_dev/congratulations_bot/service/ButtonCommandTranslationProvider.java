@@ -10,6 +10,10 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Locale;
 
+/**
+ * Class that returns the value of a button according to its translation
+ */
+
 @Component
 @Slf4j
 public class ButtonCommandTranslationProvider {

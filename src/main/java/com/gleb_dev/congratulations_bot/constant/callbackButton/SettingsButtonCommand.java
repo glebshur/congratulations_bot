@@ -1,5 +1,8 @@
 package com.gleb_dev.congratulations_bot.constant.callbackButton;
 
+/**
+ * Buttons of settings inline menu
+ */
 public enum  SettingsButtonCommand implements CallbackButton {
     LANGUAGE_RU("LANGUAGE_RU", "settings.language.ru.text"),
     LANGUAGE_EN("LANGUAGE_EN", "settings.language.en.text");

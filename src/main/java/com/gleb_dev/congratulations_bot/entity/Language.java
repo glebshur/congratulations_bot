@@ -2,6 +2,10 @@ package com.gleb_dev.congratulations_bot.entity;
 
 import lombok.Getter;
 
+/**
+ * Languages supported in app
+ */
+
 @Getter
 public enum Language {
     RUSSIAN("ru", "settings.language.ru.text"),

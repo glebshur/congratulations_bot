@@ -8,13 +8,11 @@ import com.gleb_dev.congratulations_bot.constant.callbackButton.SettingsButtonCo
 import com.gleb_dev.congratulations_bot.constant.callbackButton.VideoButtonCommand;
 import com.gleb_dev.congratulations_bot.entity.Joke;
 import com.gleb_dev.congratulations_bot.entity.Language;
+import com.gleb_dev.congratulations_bot.entity.User;
 import com.gleb_dev.congratulations_bot.entity.Wish;
 import com.gleb_dev.congratulations_bot.exception.JokeNotFoundException;
 import com.gleb_dev.congratulations_bot.exception.WishNotFoundException;
-import com.gleb_dev.congratulations_bot.service.ButtonCommandTranslationProvider;
-import com.gleb_dev.congratulations_bot.service.JokeService;
-import com.gleb_dev.congratulations_bot.service.KeyboardProvider;
-import com.gleb_dev.congratulations_bot.service.WishService;
+import com.gleb_dev.congratulations_bot.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -22,6 +20,7 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 
 import java.util.*;
 
@@ -35,22 +34,21 @@ public class MessageHandler {
 
     private JokeService jokeService;
     private WishService wishService;
+    private UserService userService;
     private MessageSource messageSource;
     private KeyboardProvider keyboardProvider;
     private ButtonCommandTranslationProvider buttonTranslationProvider;
 
-//    private static final String SETTINGS_ANSWER_CODE = "menuCommand.setting.answer";
-//    private static final String HELP_ANSWER_CODE = "menuCommand.help.answer";
-//    private static final String START_ANSWER_CODE = "menuCommand.start.answer";
-
     @Autowired
     public MessageHandler(JokeService jokeService,
                           WishService wishService,
+                          UserService userService,
                           MessageSource messageSource,
                           KeyboardProvider keyboardProvider,
                           ButtonCommandTranslationProvider buttonTranslationProvider) {
         this.jokeService = jokeService;
         this.wishService = wishService;
+        this.userService = userService;
         this.messageSource = messageSource;
         this.keyboardProvider = keyboardProvider;
         this.buttonTranslationProvider = buttonTranslationProvider;
@@ -63,10 +61,17 @@ public class MessageHandler {
      * @return response to message received
      */
     public SendMessage processMessage(Message message) {
-        String answer = null;
-        ReplyKeyboard replyKeyboard = null;
+        SendMessage sendMessage = null;
+        long chatId = message.getChatId();
+        User currUser = userService.getUser(chatId);
 
-        Language language = LanguageConstants.DEFAULT_LANGUAGE;
+        Language language;
+        if(currUser != null){
+            language = currUser.getLanguage();
+        }
+        else {
+            language = LanguageConstants.DEFAULT_LANGUAGE;
+        }
 
         Locale locale = Locale.forLanguageTag(language.getLanguageTag());
         if (message.hasText()) {
@@ -78,68 +83,124 @@ public class MessageHandler {
             String inputText = message.getText();
 
             if (inputText.equals(MenuCommand.START.getCommand())) {
-                answer = processMenuCommand(MenuCommand.START, locale, message.getChat().getFirstName());
-                replyKeyboard = keyboardProvider.getDefaultKeyboard(locale);
+                sendMessage = processStartCommand(chatId, message.getChat().getFirstName(), locale);
 
             } else if (inputText.equals(MenuCommand.SETTINGS.getCommand())) {
-                answer = processMenuCommand(MenuCommand.SETTINGS, locale,
-                        messageSource.getMessage(language.getTextCode(), null, locale));
-                replyKeyboard = keyboardProvider.getInlineKeyboard(SettingsButtonCommand.values(), locale);
+                sendMessage = processSettingsCommand(chatId, locale, currUser);
 
             } else if (inputText.equals(MenuCommand.HELP.getCommand())) {
-                answer = processMenuCommand(MenuCommand.HELP, locale, getCommandsDescriptionList(locale));
+                sendMessage = createSendMessage(chatId,
+                        getMenuCommandAnswer(MenuCommand.HELP, locale, getCommandsDescriptionList(locale)),
+                null);
+
+            } else if (inputText.equals(MenuCommand.REGISTRATION.getCommand())) {
+                sendMessage = processRegistrationCommand(chatId, locale, currUser, message);
+
+            } else if (inputText.equals(MenuCommand.MY_DATA.getCommand())) {
+                sendMessage = processMyDataCommand(chatId, locale, currUser);
+
+            } else if (inputText.equals(MenuCommand.DELETE_DATA.getCommand())) {
+                sendMessage = processDeleteDataCommand(chatId, locale, currUser);
 
             } else {
                 ButtonCommand buttonCommand = buttonTranslationProvider.getButtonCommand(inputText);
 
                 if (buttonCommand == ButtonCommand.GET_VIDEO) {
-                    answer = messageSource.getMessage(LanguageConstants.GET_VIDEO_ANSWER_CODE,
-                            null, locale);
-                    replyKeyboard = keyboardProvider.getInlineKeyboard(VideoButtonCommand.values(), locale);
+                    sendMessage = processGetVideoCommand(chatId, locale);
 
                 } else if (buttonCommand == ButtonCommand.CHOOSE_HOLIDAY) {
-                    answer = messageSource.getMessage(LanguageConstants.CHOOSE_HOLIDAY_ANSWER_CODE,
-                            null, locale);
-                    replyKeyboard = keyboardProvider.getInlineKeyboard(HolidayButtonCommand.values(), locale);
+                    sendMessage = processChooseHolidayCommand(chatId, locale);
 
                 } else if (buttonCommand == ButtonCommand.GET_WISH) {
+                    sendMessage = createSendMessage(chatId,processGetWishCommand(), null);
 
-                    answer = processGetWishCommand();
                 } else if (buttonCommand == ButtonCommand.GET_JOKE) {
+                    sendMessage = createSendMessage(chatId, processGetJokeCommand(), null);
 
-                    answer = processGetJokeCommand();
                 }
             }
         }
 
-        if (answer == null) {
-            answer = processCommandNotFound(locale);
+        if (sendMessage == null) {
+            sendMessage = processDefaultMessage(chatId, locale);
         }
-
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(message.getChatId());
-        sendMessage.setText(answer);
-        sendMessage.setReplyMarkup(replyKeyboard);
 
         return sendMessage;
     }
 
-    private String processMenuCommand(MenuCommand command, Locale locale, String... args){
-        return messageSource.getMessage(command.getAnswerCode(), args, locale);
+    private SendMessage processDefaultMessage(long chatId, Locale locale){
+        return createSendMessage(chatId, processCommandNotFound(locale), null);
     }
 
-//    private String processStartCommand(String name, Locale locale) {
-//        String answer = messageSource.getMessage(START_ANSWER_CODE,
-//                Collections.singleton(name).toArray(),
-//                locale);
-//        return answer;
-//    }
+    private SendMessage processStartCommand(long chatId, String name, Locale locale) {
+        return createSendMessage(chatId,
+                getMenuCommandAnswer(MenuCommand.START, locale, name),
+                keyboardProvider.getDefaultKeyboard(locale));
+    }
+
+    private SendMessage processSettingsCommand(long chatId, Locale locale, User user){
+        if(user == null){
+            return createSendMessage(chatId, processUserNotRegistered(locale), null);
+        }
+
+        return createSendMessage(chatId,
+                getMenuCommandAnswer(MenuCommand.SETTINGS, locale,
+                        messageSource.getMessage(user.getLanguage().getTextCode(), null, locale)),
+                keyboardProvider.getInlineKeyboard(SettingsButtonCommand.values(), locale));
+    }
+
+    private SendMessage processRegistrationCommand(long chatId, Locale locale, User currUser, Message message){
+        if(currUser != null){
+            return createSendMessage(chatId, messageSource.getMessage(LanguageConstants.USER_ALREADY_REGISTERED,
+                    null, locale), null);
+        }
+
+        User user = new User(chatId, message.getChat().getFirstName(), LanguageConstants.DEFAULT_LANGUAGE);
+        userService.createUser(user);
+
+        return createSendMessage(chatId, getMenuCommandAnswer(MenuCommand.REGISTRATION, locale), null);
+    }
+
+    private SendMessage processMyDataCommand(long chatId, Locale locale, User user){
+        if(user == null){
+            return createSendMessage(chatId, processUserNotRegistered(locale), null);
+        }
+
+        return createSendMessage(chatId,
+                getMenuCommandAnswer(MenuCommand.MY_DATA, locale, user.getId().toString(), user.getFirstName(),
+                        messageSource.getMessage(user.getLanguage().getTextCode(), null, locale)),
+                null);
+    }
+
+    private SendMessage processDeleteDataCommand(long chatId, Locale locale, User user){
+        if(user == null){
+            return createSendMessage(chatId, processUserNotRegistered(locale), null);
+        }
+
+        userService.deleteUser(user);
+        return createSendMessage(chatId, getMenuCommandAnswer(MenuCommand.DELETE_DATA, locale),
+                keyboardProvider.getDefaultKeyboard(
+                        Locale.forLanguageTag(LanguageConstants.DEFAULT_LANGUAGE.getLanguageTag())));
+    }
+
+    private SendMessage processGetVideoCommand(long chatId, Locale locale){
+        return createSendMessage(chatId,
+                messageSource.getMessage(LanguageConstants.GET_VIDEO_ANSWER_CODE, null, locale),
+                keyboardProvider.getInlineKeyboard(VideoButtonCommand.values(), locale));
+    }
+
+    private SendMessage processChooseHolidayCommand(long chatId, Locale locale){
+        return createSendMessage(chatId,
+                messageSource.getMessage(LanguageConstants.CHOOSE_HOLIDAY_ANSWER_CODE, null, locale),
+                keyboardProvider.getInlineKeyboard(HolidayButtonCommand.values(), locale));
+    }
 
     private String processCommandNotFound(Locale locale) {
-        String answer = messageSource.getMessage(LanguageConstants.COMMAND_NOT_FOUND_CODE,
-                null,
-                locale);
-        return answer;
+        return messageSource.getMessage(LanguageConstants.COMMAND_NOT_FOUND_CODE, null, locale);
+    }
+
+    private String processUserNotRegistered(Locale locale){
+        return messageSource.getMessage(LanguageConstants.USER_NOT_REGISTERED_CODE,null, locale);
     }
 
     private String processGetWishCommand() {
@@ -168,6 +229,7 @@ public class MessageHandler {
         return answer;
     }
 
+
     private String getCommandsDescriptionList(Locale locale) {
         StringBuilder help = new StringBuilder();
         Arrays.stream(MenuCommand.values())
@@ -179,6 +241,18 @@ public class MessageHandler {
                         .append("\n"));
 
         return help.toString();
+    }
+
+    private String getMenuCommandAnswer(MenuCommand command, Locale locale, String... args){
+        return messageSource.getMessage(command.getAnswerCode(), args, locale);
+    }
+
+    private SendMessage createSendMessage(long chatId, String text, ReplyKeyboard keyboardMarkup){
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(chatId);
+        sendMessage.setText(text);
+        sendMessage.setReplyMarkup(keyboardMarkup);
+        return sendMessage;
     }
 
 }

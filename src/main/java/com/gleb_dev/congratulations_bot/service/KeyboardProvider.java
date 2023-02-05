@@ -15,6 +15,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Class that creates keyboards for bot
+ */
+
 @Component
 public class KeyboardProvider {
 

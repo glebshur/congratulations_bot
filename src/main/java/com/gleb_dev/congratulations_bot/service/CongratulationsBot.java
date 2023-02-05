@@ -20,6 +20,7 @@ import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScope
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -63,23 +64,20 @@ public class CongratulationsBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
 
+        List<BotApiMethod<?>> responseList = new ArrayList<>();
         if (update.hasMessage()) {
-            SendMessage message = messageHandler.processMessage(update.getMessage());
-
-            try {
-                execute(message);
-            } catch (TelegramApiException e) {
-                log.error("Error: " + e.getMessage());
-            }
+            responseList.add(messageHandler.processMessage(update.getMessage()));
         }
         else if(update.hasCallbackQuery()){
-            BotApiMethod<Serializable> message = callbackQueryHandler.processCallbackQuery(update.getCallbackQuery());
+            responseList = callbackQueryHandler.processCallbackQuery(update.getCallbackQuery());
+        }
 
-            try {
-                execute(message);
-            } catch (TelegramApiException e) {
-                log.error("Error: " + e.getMessage());
+        try {
+            for (BotApiMethod<?> botApiMethod : responseList) {
+                execute(botApiMethod);
             }
+        }catch (TelegramApiException ex){
+            log.error("Error: " + ex.getMessage());
         }
     }
 

@@ -12,10 +12,16 @@ public enum MenuCommand {
             "menuCommand.start.fullDescription", "menuCommand.start.answer"),
     SETTINGS("/settings", "menuCommand.settings.shortDescription",
             "menuCommand.settings.fullDescription", "menuCommand.settings.answer"),
+    REGISTRATION("/registration", "menuCommand.registration.shortDescription",
+            "menuCommand.registration.fullDescription", "menuCommand.registration.answer"),
+    MY_DATA("/mydata", "menuCommand.myData.shortDescription",
+            "menuCommand.myData.fullDescription", "menuCommand.myData.answer"),
+    DELETE_DATA("/deletedata","menuCommand.deleteData.shortDescription",
+            "menuCommand.deleteData.fullDescription", "menuCommand.deleteData.answer"),
     HELP("/help", "menuCommand.help.shortDescription",
         "menuCommand.help.fullDescription", "menuCommand.help.answer");
 
-    private String command;
+    private String command; // must be in lower case, otherwise telegram api will throw an exception
     private String shortDescriptionCode;
     private String fullDescriptionCode;
     private String answerCode;
