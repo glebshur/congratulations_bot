@@ -1,5 +1,6 @@
 package com.gleb_dev.congratulations_bot.service;
 
+import com.gleb_dev.congratulations_bot.entity.Language;
 import com.gleb_dev.congratulations_bot.entity.Wish;
 import com.gleb_dev.congratulations_bot.exception.WishNotFoundException;
 import com.gleb_dev.congratulations_bot.repository.WishRepository;
@@ -22,12 +23,12 @@ public class WishService {
         random = new Random();
     }
 
-    public List<Wish> getAllWishes(){
-        return wishRepository.findAll();
+    public List<Wish> getAllWishes(Language language){
+        return wishRepository.findAllByLanguage(language);
     }
 
-    public Wish getRandomWish(){
-        List<Wish> wishes = getAllWishes();
+    public Wish getRandomWish(Language language){
+        List<Wish> wishes = getAllWishes(language);
 
         if(wishes == null || wishes.isEmpty()){
             throw new WishNotFoundException("Wishes cannot be found");

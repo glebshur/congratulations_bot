@@ -1,6 +1,7 @@
 package com.gleb_dev.congratulations_bot.service;
 
 import com.gleb_dev.congratulations_bot.entity.Joke;
+import com.gleb_dev.congratulations_bot.entity.Language;
 import com.gleb_dev.congratulations_bot.exception.JokeNotFoundException;
 import com.gleb_dev.congratulations_bot.repository.JokeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,12 +25,12 @@ public class JokeService {
         random = new Random();
     }
 
-    public List<Joke> getAllJokes(){
-        return jokeRepository.findAll();
+    public List<Joke> getAllJokes(Language language){
+        return jokeRepository.findAllByLanguage(language);
     }
 
-    public Joke getRandomJoke(){
-        List<Joke> jokes = getAllJokes();
+    public Joke getRandomJoke(Language language){
+        List<Joke> jokes = getAllJokes(language);
 
         if(jokes == null || jokes.isEmpty()){
             throw new JokeNotFoundException("Jokes cannot be found");

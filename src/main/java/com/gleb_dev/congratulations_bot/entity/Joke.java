@@ -19,4 +19,6 @@ public class Joke {
     private String title;
     @Column(columnDefinition = "text")
     private String text;
+    @Column(nullable = false)
+    private Language language;
 }

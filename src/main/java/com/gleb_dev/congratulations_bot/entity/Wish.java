@@ -17,4 +17,6 @@ public class Wish {
     private Long id;
     @Column(columnDefinition = "text")
     private String text;
+    @Column(nullable = false)
+    private Language language;
 }

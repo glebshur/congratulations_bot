@@ -1,4 +1,6 @@
 HELP.md
+docker-compose.yml
+TODO.txt
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
